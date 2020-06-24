@@ -3,20 +3,19 @@
 SoftwareSerial mySerial(2, 3);
 Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
 uint8_t id;
-     
+
 const int entrollButtonPin = 4;     // the number of the pushbutton pin
 
 void setup() {
   
   pinMode(entrollButtonPin, INPUT);
-
+  
   Serial.begin(9600);
   
 
 //Entroll SetUp
   while (!Serial);  // For Yun/Leo/Micro/Zero/...
   delay(100);
-  Serial.println("\n\nAdafruit Fingerprint sensor enrollment");
 
   // set the data rate for the sensor serial port
   finger.begin(57600);
@@ -26,7 +25,7 @@ void setup() {
   } else {
     Serial.println("Did not find fingerprint sensor :(");
     while (1) { delay(1); }
-  } 
+  }
 
 }
 
@@ -42,25 +41,27 @@ uint8_t readnumber(void) {
 
 void loop() {
 
-int  entrollButtonState = LOW;
+int  entrollButtonState = 0;
 entrollButtonState = digitalRead(entrollButtonPin);
-
 if (entrollButtonState == HIGH) {
     Serial.println("Entroll Button on");
-//Finger print Entroll 
+//Finger print Entroll Start in loop
     Serial.println("Ready to enroll a fingerprint!");
     Serial.println("Please type in the ID # (from 1 to 127) you want to save this finger as...");
     id = readnumber();
     if (id == 0) {// ID #0 not allowed, try again!
-       return;
+      return;
     }
-    Serial.print("Enrolling ID #");
-    Serial.println(id);
+  Serial.print("Enrolling ID #");
+  Serial.println(id);
   
-    while (!  getFingerprintEnroll() );
+  while (!  getFingerprintEnroll() );  
   }
 
-  delay(1000);
+//GetId
+getFingerprintIDez();
+
+delay(1000);
   
 }
 
@@ -202,4 +203,37 @@ uint8_t getFingerprintEnroll() {
     Serial.println("Unknown error");
     return p;
   }   
+
+
+p = finger.fingerFastSearch();
+  if (p == FINGERPRINT_OK) {
+    Serial.println("Found a print match!");
+  } else if (p == FINGERPRINT_PACKETRECIEVEERR) {
+    Serial.println("Communication error");
+    return p;
+  } else if (p == FINGERPRINT_NOTFOUND) {
+    Serial.println("Did not find a match");
+    return p;
+  } else {
+    Serial.println("Unknown error");
+    return p;
+  }
 }
+  
+//GetId function 
+
+int getFingerprintIDez() {
+  uint8_t p = finger.getImage();
+  if (p != FINGERPRINT_OK)  return -1;
+
+  p = finger.image2Tz();
+  if (p != FINGERPRINT_OK)  return -1;
+
+  p = finger.fingerFastSearch();
+  if (p != FINGERPRINT_OK)  return -1;
+  
+  // found a match!
+  Serial.print("Found ID #"); Serial.print(finger.fingerID); 
+  Serial.print(" with confidence of "); Serial.println(finger.confidence);
+  return finger.fingerID; 
+} 
