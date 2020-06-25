@@ -43,7 +43,6 @@ void setup() {
   lcd.setBacklight(HIGH);
   lcd.home ();
 
-
 //Enroll SetUp
   while (!Serial);  // For Yun/Leo/Micro/Zero/...
   delay(100);
@@ -64,7 +63,7 @@ myRTC.setDS1302Time(15, 22, 21, 7, 14, 1, 2018);
 
 void loop() {
   
-lcd.clear(); //Clean the LCD
+ lcd.clear(); //Clean the LCD
  myRTC.updateTime();
  lcd.setCursor(0,0);
  lcd.print(myRTC.dayofmonth);
@@ -85,10 +84,8 @@ enrollButtonState = digitalRead(enrollButtonPin);
 if (enrollButtonState == HIGH) {
     lcd.clear();
     lcd.print("Enroll On");
-    delay(2000);
-    lcd.clear();
-    lcd.print("Type ID:");
-    delay(5000);
+    
+    delay(1000);
 
     int  okButtonState = 0;
     int  addButtonState = 0;
@@ -97,6 +94,7 @@ if (enrollButtonState == HIGH) {
     while(okButtonState == 0)
     {
       lcd.clear();
+      lcd.print("Type ID:");
       lcd.print(idCount);
       addButtonState = digitalRead(addButtonPin);
       subButtonState = digitalRead(subButtonPin);
@@ -116,11 +114,7 @@ if (enrollButtonState == HIGH) {
   if (id == 0) {// ID #0 not allowed, try again!
      return;
   }
-  lcd.print("Enrolling...");
-  
-  lcd.setCursor(1,0);
-  lcd.print(id);
-  delay(5000);
+  delay(1000);
   while (!  getFingerprintEnroll() ); 
   }
 
@@ -138,24 +132,26 @@ uint8_t getFingerprintEnroll() {
   int p = -1;
   lcd.clear();
   lcd.print("finger for"); lcd.print(id);lcd.print(":");
+  delay(1500);
   while (p != FINGERPRINT_OK) {
     p = finger.getImage();
     switch (p) {
     case FINGERPRINT_OK:
     lcd.clear();
-      lcd.println("Taken");
+      lcd.print("Taken");
+      delay(600);
       break;
     case FINGERPRINT_NOFINGER:
       lcd.print(".");
       break;
     case FINGERPRINT_PACKETRECIEVEERR:
-      lcd.println("Communication error");
+      lcd.print("Communication error");
       break;
     case FINGERPRINT_IMAGEFAIL:
-      lcd.println("Imaging error");
+      lcd.print("Imaging error");
       break;
     default:
-      lcd.println("Unknown error");
+      lcd.print("Unknown error");
       break;
     }
   }
@@ -166,53 +162,58 @@ uint8_t getFingerprintEnroll() {
   switch (p) {
     case FINGERPRINT_OK:
     lcd.clear();
-      lcd.println("Img.converted");
+      lcd.print("Img converted");
+      delay(600);
       break;
     case FINGERPRINT_IMAGEMESS:
-      lcd.println("Image too messy");
+      lcd.print("Image too messy");
       return p;
     case FINGERPRINT_PACKETRECIEVEERR:
-      lcd.println("Communication error");
+      lcd.print("Communication error");
       return p;
     case FINGERPRINT_FEATUREFAIL:
-      lcd.println("Could not find fingerprint features");
+      lcd.print("Could not find fingerprint features");
       return p;
     case FINGERPRINT_INVALIDIMAGE:
-      lcd.println("Could not find fingerprint features");
+      lcd.print("Could not find fingerprint features");
       return p;
     default:
-      lcd.println("Unknown error");
+      lcd.print("Unknown error");
       return p;
   }
-  
-  lcd.println("Remove finger");
-  delay(2000);
+  lcd.clear();
+  lcd.print("Remove finger");
+  delay(1000);
   p = 0;
   while (p != FINGERPRINT_NOFINGER) {
     p = finger.getImage();
   }
-  lcd.print("ID "); lcd.println(id);
   p = -1;
   lcd.clear();
-  lcd.println("Place again");
+  lcd.print("Place again");
   while (p != FINGERPRINT_OK) {
     p = finger.getImage();
     switch (p) {
     case FINGERPRINT_OK:
     lcd.clear();
-      lcd.println("Taken");
+      lcd.print("Taken");
+      delay(500);
       break;
     case FINGERPRINT_NOFINGER:
       lcd.print(".");
+      delay(100);
       break;
     case FINGERPRINT_PACKETRECIEVEERR:
-      lcd.println("Communication error");
+      lcd.print("Communication error");
+      delay(100);
       break;
     case FINGERPRINT_IMAGEFAIL:
-      lcd.println("Imaging error");
+      lcd.print("Imaging error");
+      delay(100);
       break;
     default:
-      lcd.println("Unknown error");
+      lcd.print("Unknown error");
+      delay(100);
       break;
     }
   }
@@ -222,48 +223,63 @@ uint8_t getFingerprintEnroll() {
   p = finger.image2Tz(2);
   switch (p) {
     case FINGERPRINT_OK:
-    lcd.clear();
-      lcd.println("Img.converted");
+      lcd.clear();
+      lcd.print("Img converted");
+      delay(1000);
       break;
     case FINGERPRINT_IMAGEMESS:
-      lcd.println("Image too messy");
+      lcd.print("Image too messy");
+      delay(100);
       return p;
     case FINGERPRINT_PACKETRECIEVEERR:
-      lcd.println("Communication error");
+      lcd.print("Communication error");
+      delay(100);
       return p;
     case FINGERPRINT_FEATUREFAIL:
-      lcd.println("Could not find fingerprint features");
+      lcd.print("Could not find fingerprint features");
       return p;
     case FINGERPRINT_INVALIDIMAGE:
       lcd.println("Could not find fingerprint features");
       return p;
     default:
-      lcd.println("Unknown error");
+      lcd.print("Unknown error");
       return p;
   }
   
   // OK converted!
-  lcd.print("Creating model for #");  lcd.println(id);
+  
   
   p = finger.createModel();
   if (p == FINGERPRINT_OK) {
-    lcd.println("Prints matched!");
+    lcd.clear();
+    lcd.print("Prints matched!");
+    delay(1000);
   } else if (p == FINGERPRINT_PACKETRECIEVEERR) {
-    lcd.println("Communication error");
+    lcd.clear();
+    lcd.print("Communication error");
+    delay(100);
     return p;
   } else if (p == FINGERPRINT_ENROLLMISMATCH) {
-    lcd.println("Fingerprints did not match");
+    lcd.clear();
+    lcd.print("Did not match");
+    delay(1000);
     return p;
   } else {
-    lcd.println("Unknown error");
+    lcd.clear();
+    lcd.print("Unknown error");
+    delay(100);
     return p;
-  }   
-  lcd.clear();
-  lcd.print("ID "); lcd.println(id);
+  }    
+  
+  
+  
   p = finger.storeModel(id);
   if (p == FINGERPRINT_OK) {
-    lcd.println("Stored!");
+    lcd.clear();
+    lcd.print("ID:"); lcd.print(id);lcd.print(" Stored!");
+    delay(1000);
   } else if (p == FINGERPRINT_PACKETRECIEVEERR) {
+    lcd.clear();
     lcd.println("Communication error");
     return p;
   } else if (p == FINGERPRINT_BADLOCATION) {
