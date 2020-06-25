@@ -1,19 +1,24 @@
-#include <Adafruit_Fingerprint.h>
+#include <Adafruit_Fingerprint.h> //Finger Print sensor Library
+#include <virtuabotixRTC.h> //RTC library
 
 SoftwareSerial mySerial(2, 3);
 Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
-uint8_t id;
+uint8_t id;           // for Finger print sensor module
+
+virtuabotixRTC myRTC(6, 7, 8); //If you change the wiring change the pins here also     
+
+// CLK -> 6 , DAT -> 7, Reset -> 8 For RTC Module
 
 const int entrollButtonPin = 4;     // the number of the pushbutton pin
 
 void setup() {
   
   pinMode(entrollButtonPin, INPUT);
-  
+
   Serial.begin(9600);
   
 
-//Entroll SetUp
+//Entroll SetUp 
   while (!Serial);  // For Yun/Leo/Micro/Zero/...
   delay(100);
 
@@ -26,6 +31,9 @@ void setup() {
     Serial.println("Did not find fingerprint sensor :(");
     while (1) { delay(1); }
   }
+  
+//RTC Setup
+myRTC.setDS1302Time(15, 22, 21, 7, 14, 1, 2018);
 
 }
 
@@ -41,7 +49,7 @@ uint8_t readnumber(void) {
 
 void loop() {
 
-int  entrollButtonState = 0;
+int  entrollButtonState = 0; 
 entrollButtonState = digitalRead(entrollButtonPin);
 if (entrollButtonState == HIGH) {
     Serial.println("Entroll Button on");
@@ -55,11 +63,26 @@ if (entrollButtonState == HIGH) {
   Serial.print("Enrolling ID #");
   Serial.println(id);
   
-  while (!  getFingerprintEnroll() );  
+  while (!  getFingerprintEnroll() ); 
   }
 
 //GetId
 getFingerprintIDez();
+
+//RTC printing date and Time
+ myRTC.updateTime();
+ Serial.print("Current Date / Time: ");
+ Serial.print(myRTC.dayofmonth); //You can switch between day and month if you're using American system
+ Serial.print("/");
+ Serial.print(myRTC.month);
+ Serial.print("/");
+ Serial.print(myRTC.year);
+ Serial.print(" ");
+ Serial.print(myRTC.hours);
+ Serial.print(":");
+ Serial.print(myRTC.minutes);
+ Serial.print(":");
+ Serial.println(myRTC.seconds);
 
 delay(1000);
   
@@ -203,24 +226,9 @@ uint8_t getFingerprintEnroll() {
     Serial.println("Unknown error");
     return p;
   }   
-
-
-p = finger.fingerFastSearch();
-  if (p == FINGERPRINT_OK) {
-    Serial.println("Found a print match!");
-  } else if (p == FINGERPRINT_PACKETRECIEVEERR) {
-    Serial.println("Communication error");
-    return p;
-  } else if (p == FINGERPRINT_NOTFOUND) {
-    Serial.println("Did not find a match");
-    return p;
-  } else {
-    Serial.println("Unknown error");
-    return p;
-  }
 }
-  
-//GetId function 
+
+//GetId function  
 
 int getFingerprintIDez() {
   uint8_t p = finger.getImage();
@@ -235,5 +243,21 @@ int getFingerprintIDez() {
   // found a match!
   Serial.print("Found ID #"); Serial.print(finger.fingerID); 
   Serial.print(" with confidence of "); Serial.println(finger.confidence);
+
+  Serial.print("ID    =  ");Serial.print(finger.fingerID);
+  Serial.print("  finger print placing time = ");
+  myRTC.updateTime();
+  Serial.print(myRTC.dayofmonth); //You can switch between day and month if you're using American system
+  Serial.print("/");
+  Serial.print(myRTC.month);
+  Serial.print("/");
+  Serial.print(myRTC.year);
+  Serial.print(" ");
+  Serial.print(myRTC.hours);
+  Serial.print(":");
+  Serial.print(myRTC.minutes);
+  Serial.print(":");
+  Serial.println(myRTC.seconds);
+  
   return finger.fingerID; 
-} 
+}
