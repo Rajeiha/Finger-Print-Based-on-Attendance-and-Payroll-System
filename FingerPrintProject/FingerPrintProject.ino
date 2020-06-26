@@ -62,62 +62,17 @@ myRTC.setDS1302Time(15, 22, 21, 7, 14, 1, 2018);
 }
 
 void loop() {
-  
- lcd.clear(); //Clean the LCD
- myRTC.updateTime();
- lcd.setCursor(0,0);
- lcd.print(myRTC.dayofmonth);
- lcd.print("/");
- lcd.print(myRTC.month);
- lcd.print("/");
- lcd.print(myRTC.year);
- lcd.setCursor(0,1);
- lcd.print(myRTC.hours);
- lcd.print(":");
- lcd.print(myRTC.minutes);
- lcd.print(":");
- lcd.print(myRTC.seconds);
- delay(1000);
+
+showDateTime(); //Created function for show the date and time
 
 int  enrollButtonState = 0;
 enrollButtonState = digitalRead(enrollButtonPin);
 if (enrollButtonState == HIGH) {
-    lcd.clear();
-    lcd.print("Enroll On");
-    
-    delay(1000);
-
-    int  okButtonState = 0;
-    int  addButtonState = 0;
-    int  subButtonState = 0; 
-    int idCount = 1;
-    while(okButtonState == 0)
-    {
-      lcd.clear();
-      lcd.print("Type ID:");
-      lcd.print(idCount);
-      addButtonState = digitalRead(addButtonPin);
-      subButtonState = digitalRead(subButtonPin);
-      if((addButtonState == 1)&&(idCount<=127))
-      {
-        idCount++;
-      }
-      if((subButtonState == 1)&&(idCount>0))
-      {
-        idCount--;
-      }
-      okButtonState = digitalRead(okButtonPin);
-      delay(1000);
-    }
-    
-  id = idCount;
-  if (id == 0) {// ID #0 not allowed, try again!
-     return;
+     
+ getFingerprintEnroll();
+  
   }
-  delay(1000);
-  while (!  getFingerprintEnroll() ); 
-  }
-
+  
 //GetId
 getFingerprintIDez();
   
@@ -126,9 +81,40 @@ delay(1000);
 
 
 
-//Entroll function
+//Enroll function 
 uint8_t getFingerprintEnroll() {
 
+    lcd.clear();
+    lcd.print("Enroll On");
+    delay(2000);
+
+    int  okButtonState = 0;
+    int  addButtonState = 0;
+    int  subButtonState = 0; 
+    int idCount = 1;
+    while(okButtonState == 0)
+    {
+      lcd.clear();
+      lcd.print("Type ID:");lcd.print(idCount);
+      addButtonState = digitalRead(addButtonPin);
+      subButtonState = digitalRead(subButtonPin);
+      if((addButtonState == 1)&&(idCount<30))
+      {
+        idCount++;
+      }
+      if((subButtonState == 1)&&(idCount>1))
+      {
+        idCount--;
+      }
+      okButtonState = digitalRead(okButtonPin);
+      delay(1000);
+    }
+    
+    id = idCount;
+    if (id == 0) {// ID #0 not allowed, try again!
+     return;
+    }
+  
   int p = -1;
   lcd.clear();
   lcd.print("finger for"); lcd.print(id);lcd.print(":");
@@ -163,22 +149,27 @@ uint8_t getFingerprintEnroll() {
     case FINGERPRINT_OK:
     lcd.clear();
       lcd.print("Img converted");
-      delay(600);
+      delay(100);
       break;
     case FINGERPRINT_IMAGEMESS:
       lcd.print("Image too messy");
+      delay(100);
       return p;
     case FINGERPRINT_PACKETRECIEVEERR:
       lcd.print("Communication error");
+      delay(100);
       return p;
     case FINGERPRINT_FEATUREFAIL:
       lcd.print("Could not find fingerprint features");
+      delay(100);
       return p;
     case FINGERPRINT_INVALIDIMAGE:
       lcd.print("Could not find fingerprint features");
+      delay(100);
       return p;
     default:
       lcd.print("Unknown error");
+      delay(100);
       return p;
   }
   lcd.clear();
@@ -237,12 +228,15 @@ uint8_t getFingerprintEnroll() {
       return p;
     case FINGERPRINT_FEATUREFAIL:
       lcd.print("Could not find fingerprint features");
+      delay(100);
       return p;
     case FINGERPRINT_INVALIDIMAGE:
       lcd.println("Could not find fingerprint features");
+      delay(100);
       return p;
     default:
       lcd.print("Unknown error");
+      delay(100);
       return p;
   }
   
@@ -269,29 +263,30 @@ uint8_t getFingerprintEnroll() {
     lcd.print("Unknown error");
     delay(100);
     return p;
-  }    
+  } 
   
   
   
-  p = finger.storeModel(id);
-  if (p == FINGERPRINT_OK) {
-    lcd.clear();
-    lcd.print("ID:"); lcd.print(id);lcd.print(" Stored!");
-    delay(1000);
-  } else if (p == FINGERPRINT_PACKETRECIEVEERR) {
-    lcd.clear();
-    lcd.println("Communication error");
-    return p;
-  } else if (p == FINGERPRINT_BADLOCATION) {
-    lcd.println("Could not store in that location");
-    return p;
-  } else if (p == FINGERPRINT_FLASHERR) {
-    lcd.println("Error writing to flash");
-    return p;
-  } else {
-    lcd.println("Unknown error");
-    return p;
-  }   
+   p = finger.storeModel(id);
+  switch (p){
+    case FINGERPRINT_OK:
+      lcd.clear();
+      lcd.print("ID Stored!");
+      delay(1000);
+      break;
+    case FINGERPRINT_PACKETRECIEVEERR:
+      lcd.print("Communication error");
+      return p;
+    case FINGERPRINT_BADLOCATION:
+      lcd.print("Could not store in that location");
+      return p;
+    case FINGERPRINT_FLASHERR:
+      lcd.print("Error writing to flash");
+      return p;
+    default:
+      lcd.print("Unknown error");
+      return p;
+  } 
 }
 
 //GetId function
@@ -316,4 +311,24 @@ int getFingerprintIDez() {
   lcd.print(myRTC.seconds);
   
   return finger.fingerID; 
+
+  delay(4000);
+}
+
+void showDateTime(){
+ lcd.clear(); //Clean the LCD
+ myRTC.updateTime();
+ lcd.setCursor(0,0);
+ lcd.print(myRTC.dayofmonth);
+ lcd.print("/");
+ lcd.print(myRTC.month);
+ lcd.print("/");
+ lcd.print(myRTC.year);
+ lcd.setCursor(0,1);
+ lcd.print(myRTC.hours);
+ lcd.print(":");
+ lcd.print(myRTC.minutes);
+ lcd.print(":");
+ lcd.print(myRTC.seconds);
+ delay(600);  
 }
