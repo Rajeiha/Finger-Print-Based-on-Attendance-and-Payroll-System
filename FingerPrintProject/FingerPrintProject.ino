@@ -29,6 +29,16 @@ const int okButtonPin = 5;       // the number of the pushbutton pin
 const int addButtonPin = 10;     // the number of the pushbutton pin
 const int subButtonPin = 11;     // the number of the pushbutton pin
 
+int arrh[30]={0};
+int arrm[30]={0};
+int arrs[30]={0};
+int arrPreh[30]={0};
+int arrPrem[30]={0};
+int arrPres[30]={0};
+int regCount[30]={0};
+int arrTime[30]={0};
+int totalTime[30]={0};
+
 void setup() {
   
   pinMode(enrollButtonPin, INPUT);
@@ -304,14 +314,61 @@ int getFingerprintIDez() {
   // found a match!
   lcd.print("ID:"); lcd.print(finger.fingerID); 
   lcd.setCursor(0,1);
-  lcd.print(myRTC.hours);
-  lcd.print(":");
-  lcd.print(myRTC.minutes);
-  lcd.print(":");
-  lcd.print(myRTC.seconds);
+
+  int finId = finger.fingerID-1;
+  regCount[finId]++;
+  if((regCount[finId]%2)==1){
+    arrh[finId]=myRTC.hours;
+    arrm[finId]=myRTC.minutes;
+    arrs[finId]=myRTC.seconds;
+
+    arrPreh[finId]=arrh[finId];
+    arrPrem[finId]=arrm[finId];
+    arrPres[finId]=arrs[finId];
+
+    arrTime[finId]=0;
+  }
+  else if((regCount[finId]%2)==0){
+    arrh[finId]=myRTC.hours;
+    arrm[finId]=myRTC.minutes;
+    arrs[finId]=myRTC.seconds;
+
+    int ts,tm,th;
+    if(arrPres[finId]<=arrs[finId])
+    {
+      ts=arrs[finId]-arrPres[finId];
+    }
+    else
+    {
+      ts=arrs[finId]+60-arrPres[finId];
+      arrm[finId]--;
+    }
+
+    if(arrPrem[finId]<=arrm[finId])
+    {
+      tm=arrm[finId]-arrPrem[finId];
+    }
+    else
+    {
+      tm=arrm[finId]+60-arrPrem[finId];
+      arrh[finId]--;
+    }
+     th = arrh[finId]-arrPreh[finId];
+     arrTime[finId]=ts+(tm*60)+(th*60*60);
+  }
+  
+  totalTime[finId]=totalTime[finId]+arrTime[finId];
+  
+  lcd.print(arrh[finId]); lcd.print(":"); lcd.print(arrm[finId]); lcd.print(":"); lcd.print(arrs[finId]);
+  Serial.print("ID:"); Serial.print(finger.fingerID);
+  Serial.print("  ");
+  Serial.print(arrh[finId]);Serial.print(":");Serial.print(arrm[finId]);
+  Serial.print(":");Serial.println(arrs[finId]);
+  Serial.print("Total working time : ");
+  Serial.println(totalTime[finId]);
   
   return finger.fingerID; 
-
+  
   delay(4000);
 }
 
