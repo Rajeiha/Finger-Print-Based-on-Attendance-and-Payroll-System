@@ -28,6 +28,10 @@ const int enrollButtonPin = 4;  // the number of the pushbutton pin
 const int okButtonPin = 5;       // the number of the pushbutton pin
 const int addButtonPin = 10;     // the number of the pushbutton pin
 const int subButtonPin = 11;     // the number of the pushbutton pin
+const int weekButtonPin = 12;     // the number of the pushbutton pin
+const int weekEndButtonPin = 13;     // the number of the pushbutton pin
+
+int dayType=1;
 
 int arrh[30]={0};
 int arrm[30]={0};
@@ -45,6 +49,8 @@ void setup() {
   pinMode(okButtonPin, INPUT);
   pinMode(addButtonPin, INPUT);
   pinMode(subButtonPin, INPUT);
+  pinMode(weekButtonPin, INPUT);
+  pinMode(weekEndButtonPin, INPUT);
 
   Serial.begin(9600);
   
@@ -74,6 +80,8 @@ myRTC.setDS1302Time(15, 22, 21, 7, 14, 1, 2018);
 void loop() {
 
 showDateTime(); //Created function for show the date and time
+
+showDayType();  //Created function for show the Day type
 
 int  enrollButtonState = 0;
 enrollButtonState = digitalRead(enrollButtonPin);
@@ -388,4 +396,25 @@ void showDateTime(){
  lcd.print(":");
  lcd.print(myRTC.seconds);
  delay(600);  
+}
+
+void showDayType(){
+  int weekButtonState = 0;
+  int weekEndButtonState = 0;
+  weekButtonState = digitalRead(weekButtonPin);
+  weekEndButtonState = digitalRead(weekEndButtonPin);
+  lcd.clear();
+
+  if(weekButtonState==HIGH){
+    dayType=1;
+  }
+  if(weekEndButtonState==HIGH){
+    dayType=2;
+  }
+  if(dayType==1){
+    lcd.print("Week Day");
+  }
+  if(dayType==2){
+    lcd.print("Weekend Day");
+  }
 }
