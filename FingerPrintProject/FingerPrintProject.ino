@@ -28,20 +28,19 @@ const int enrollButtonPin = 4;  // the number of the pushbutton pin
 const int okButtonPin = 5;       // the number of the pushbutton pin
 const int addButtonPin = 10;     // the number of the pushbutton pin
 const int subButtonPin = 11;     // the number of the pushbutton pin
+const int salaryButtonPin = 9;     // the number of the pushbutton pin
 const int weekButtonPin = 12;     // the number of the pushbutton pin
 const int weekEndButtonPin = 13;     // the number of the pushbutton pin
 
 int dayType=1;
+int fingerId;
 
-int arrh[30]={0};
-int arrm[30]={0};
-int arrs[30]={0};
 int arrPreh[30]={0};
 int arrPrem[30]={0};
 int arrPres[30]={0};
 int regCount[30]={0};
-int arrTime[30]={0};
-int totalTime[30]={0};
+int salary[30]={0};
+int time_sec = 0;
 
 void setup() {
   
@@ -49,6 +48,7 @@ void setup() {
   pinMode(okButtonPin, INPUT);
   pinMode(addButtonPin, INPUT);
   pinMode(subButtonPin, INPUT);
+  pinMode(salaryButtonPin, INPUT);
   pinMode(weekButtonPin, INPUT);
   pinMode(weekEndButtonPin, INPUT);
 
@@ -90,6 +90,12 @@ if (enrollButtonState == HIGH) {
  getFingerprintEnroll();
   
   }
+
+int salaryButtonState = 0; 
+salaryButtonState = digitalRead(salaryButtonPin);
+if (salaryButtonState == HIGH) {
+     showSalary();
+  }  
   
 //GetId
 getFingerprintIDez();
@@ -312,68 +318,31 @@ uint8_t getFingerprintEnroll() {
 int getFingerprintIDez() {
   uint8_t p = finger.getImage();
   if (p != FINGERPRINT_OK)  return -1;
-
+  
   p = finger.image2Tz();
   if (p != FINGERPRINT_OK)  return -1;
 
   p = finger.fingerFastSearch();
   if (p != FINGERPRINT_OK)  return -1;
-  lcd.clear();
-  // found a match!
-  lcd.print("ID:"); lcd.print(finger.fingerID); 
-  lcd.setCursor(0,1);
-
-  int finId = finger.fingerID-1;
-  regCount[finId]++;
-  if((regCount[finId]%2)==1){
-    arrh[finId]=myRTC.hours;
-    arrm[finId]=myRTC.minutes;
-    arrs[finId]=myRTC.seconds;
-
-    arrPreh[finId]=arrh[finId];
-    arrPrem[finId]=arrm[finId];
-    arrPres[finId]=arrs[finId];
-
-    arrTime[finId]=0;
-  }
-  else if((regCount[finId]%2)==0){
-    arrh[finId]=myRTC.hours;
-    arrm[finId]=myRTC.minutes;
-    arrs[finId]=myRTC.seconds;
-
-    int ts,tm,th;
-    if(arrPres[finId]<=arrs[finId])
-    {
-      ts=arrs[finId]-arrPres[finId];
-    }
-    else
-    {
-      ts=arrs[finId]+60-arrPres[finId];
-      arrm[finId]--;
-    }
-
-    if(arrPrem[finId]<=arrm[finId])
-    {
-      tm=arrm[finId]-arrPrem[finId];
-    }
-    else
-    {
-      tm=arrm[finId]+60-arrPrem[finId];
-      arrh[finId]--;
-    }
-     th = arrh[finId]-arrPreh[finId];
-     arrTime[finId]=ts+(tm*60)+(th*60*60);
-  }
   
-  totalTime[finId]=totalTime[finId]+arrTime[finId];
-  
-  lcd.print(arrh[finId]); lcd.print(":"); lcd.print(arrm[finId]); lcd.print(":"); lcd.print(arrs[finId]);
-  Serial.print("ID:"); Serial.print(finger.fingerID);
-  Serial.print("  ");
-  Serial.print(arrh[finId]);Serial.print(":");Serial.print(arrm[finId]);
-  Serial.print(":");Serial.println(arrs[finId]);
-  Serial.print("Total working time : ");
-  Serial.println(totalTime[finId]);
+  fingerId = finger.fingerID;
+
+  getFingerprintCal();
+  delay(1000);
+  int ok2ButtonState = 0;
+  while(ok2ButtonState == 0)
+    {
+      ok2ButtonState = digitalRead(okButtonPin);
+      int salaryButtonState = 0;
+      salaryButtonState = digitalRead(salaryButtonPin);
+      if(salaryButtonState == 1)
+      {
+      lcd.clear();
+      lcd.print("Salary : ");
+      lcd.print(salary[fingerId-1]);
+      delay(1000);
+      }
+    }
   
   return finger.fingerID; 
   
@@ -417,4 +386,93 @@ void showDayType(){
   if(dayType==2){
     lcd.print("Weekend Day");
   }
+}
+
+void getFingerprintCal() {
+
+  int finId = fingerId-1;
+  lcd.clear();
+  // found a match!
+  lcd.print("ID:"); lcd.print(fingerId); 
+  lcd.setCursor(0,1);
+  
+  int seconds = myRTC.seconds;
+  int minutes = myRTC.minutes;
+  int hours = myRTC.hours;
+
+  int regHour = 0;
+  int regMin = 0;
+  int regSec = 0;
+
+  regCount[finId]++;
+  if((regCount[finId]%2)==1){
+    regHour=hours;
+    regMin=minutes;
+    regSec =seconds;
+
+    arrPreh[finId]=regHour;
+    arrPrem[finId]=regMin;
+    arrPres[finId]=regSec;
+
+    time_sec =0;
+  }
+  else if((regCount[finId]%2)==0){
+    regHour=hours;
+    regMin=minutes;
+    regSec=seconds;
+
+    int ts,tm,th;
+    if(arrPres[finId]<=regSec)
+    {
+      ts=regSec-arrPres[finId];
+    }
+    else
+    {
+      ts=regSec+60-arrPres[finId];
+      regMin--;
+    }
+
+    if(arrPrem[finId]<=regMin)
+    {
+      tm=regMin-arrPrem[finId];
+    }
+    else
+    {
+      tm=regMin+60-arrPrem[finId];
+      regHour--;
+    }
+     th = regHour-arrPreh[finId];
+     time_sec =ts+(tm*60)+(th*60*60);
+  }
+  
+  if(dayType==1)
+  {
+    salary[finId] = salary[finId] + (time_sec*5);
+  }
+  if(dayType==2)
+  {
+    salary[finId] = salary[finId] + (time_sec*7);
+  }
+  
+  lcd.print(hours); lcd.print(":"); lcd.print(minutes); lcd.print(":"); lcd.print(seconds);
+  Serial.print("ID:"); Serial.print(finger.fingerID);
+  Serial.print("  ");
+  Serial.print(hours);Serial.print(":");Serial.print(minutes);
+  Serial.print(":");Serial.println(seconds);
+  Serial.print("Total Salary : ");
+  Serial.println(salary[finId]);
+ 
+}
+
+void showSalary()
+{
+  int i;
+  for(i=1;i<=30;i++)
+  {
+    Serial.print("ID : ");
+    Serial.print(i);
+    Serial.print("\t");
+    Serial.println(salary[i-1]);
+  }
+
 }
