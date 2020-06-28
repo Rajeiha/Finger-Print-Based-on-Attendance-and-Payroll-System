@@ -28,19 +28,19 @@ const int enrollButtonPin = 4;  // the number of the pushbutton pin
 const int okButtonPin = 5;       // the number of the pushbutton pin
 const int addButtonPin = 10;     // the number of the pushbutton pin
 const int subButtonPin = 11;     // the number of the pushbutton pin
-const int salaryButtonPin = 9;     // the number of the pushbutton pin
-const int weekButtonPin = 12;     // the number of the pushbutton pin
-const int weekEndButtonPin = 13;     // the number of the pushbutton pin
+const int salaryButtonPin = 9;   // the number of the pushbutton pin
+const int weekButtonPin = 12;    // the number of the pushbutton pin
+const int weekEndButtonPin = 13; // the number of the pushbutton pin
 
 int dayType=1;
-int fingerId;
 
-int arrPreh[30]={0};
-int arrPrem[30]={0};
-int arrPres[30]={0};
+int preHour[30]={0};
+int preMin[30]={0};
+int preSec[30]={0};
 int regCount[30]={0};
-int salary[30]={0};
 int time_sec = 0;
+
+int salary[30]={0};
 
 void setup() {
   
@@ -57,7 +57,7 @@ void setup() {
   lcd.begin (16,2);
   lcd.setBacklightPin(BACKLIGHT_PIN,POSITIVE);
   lcd.setBacklight(HIGH);
-  lcd.home ();
+  lcd.home();
 
 //Enroll SetUp
   while (!Serial);  // For Yun/Leo/Micro/Zero/...
@@ -72,8 +72,8 @@ void setup() {
     while (1) { delay(1); }
   }
 
-//RTC Setup
-myRTC.setDS1302Time(15, 22, 21, 7, 14, 1, 2018);
+//RTC Setup 
+myRTC.setDS1302Time(15, 22, 10,7, 25, 2, 2020);
 
 }
 
@@ -81,34 +81,30 @@ void loop() {
 
 showDateTime(); //Created function for show the date and time
 
-showDayType();  //Created function for show the Day type
+showDayType(); //Created function for show the Day type
 
 int  enrollButtonState = 0;
 enrollButtonState = digitalRead(enrollButtonPin);
-if (enrollButtonState == HIGH) {
-     
- getFingerprintEnroll();
-  
+if (enrollButtonState == HIGH) 
+  {
+    getFingerprintEnroll(); 
   }
+
+getFingerprintIDez();
 
 int salaryButtonState = 0; 
 salaryButtonState = digitalRead(salaryButtonPin);
 if (salaryButtonState == HIGH) {
      showSalary();
-  }  
-  
-//GetId
-getFingerprintIDez();
+  }
   
 delay(1000);
 }
 
-
-
 //Enroll function 
 uint8_t getFingerprintEnroll() {
 
-    lcd.clear();
+  lcd.clear();
     lcd.print("Enroll On");
     delay(2000);
 
@@ -138,7 +134,7 @@ uint8_t getFingerprintEnroll() {
     if (id == 0) {// ID #0 not allowed, try again!
      return;
     }
-  
+
   int p = -1;
   lcd.clear();
   lcd.print("finger for"); lcd.print(id);lcd.print(":");
@@ -287,7 +283,7 @@ uint8_t getFingerprintEnroll() {
     lcd.print("Unknown error");
     delay(100);
     return p;
-  } 
+  }   
   
   
   
@@ -313,7 +309,7 @@ uint8_t getFingerprintEnroll() {
   } 
 }
 
-//GetId function
+//GetId function  
 
 int getFingerprintIDez() {
   uint8_t p = finger.getImage();
@@ -325,7 +321,7 @@ int getFingerprintIDez() {
   p = finger.fingerFastSearch();
   if (p != FINGERPRINT_OK)  return -1;
   
-  fingerId = finger.fingerID;
+  id = finger.fingerID;
 
   getFingerprintCal();
   delay(1000);
@@ -339,7 +335,7 @@ int getFingerprintIDez() {
       {
       lcd.clear();
       lcd.print("Salary : ");
-      lcd.print(salary[fingerId-1]);
+      lcd.print(salary[id-1]);
       delay(1000);
       }
     }
@@ -348,6 +344,8 @@ int getFingerprintIDez() {
   
   delay(4000);
 }
+ 
+
 
 void showDateTime(){
  lcd.clear(); //Clean the LCD
@@ -364,9 +362,10 @@ void showDateTime(){
  lcd.print(myRTC.minutes);
  lcd.print(":");
  lcd.print(myRTC.seconds);
- delay(600);  
-}
+ delay(1000);
 
+ }
+ 
 void showDayType(){
   int weekButtonState = 0;
   int weekEndButtonState = 0;
@@ -387,13 +386,12 @@ void showDayType(){
     lcd.print("Weekend Day");
   }
 }
-
 void getFingerprintCal() {
 
-  int finId = fingerId-1;
+  int finId = id-1;
   lcd.clear();
   // found a match!
-  lcd.print("ID:"); lcd.print(fingerId); 
+  lcd.print("ID:"); lcd.print(id); 
   lcd.setCursor(0,1);
   
   int seconds = myRTC.seconds;
@@ -410,11 +408,14 @@ void getFingerprintCal() {
     regMin=minutes;
     regSec =seconds;
 
-    arrPreh[finId]=regHour;
-    arrPrem[finId]=regMin;
-    arrPres[finId]=regSec;
+    preHour[finId]=regHour;
+    preMin[finId]=regMin;
+    preSec[finId]=regSec;
 
     time_sec =0;
+    Serial.print("ID ");
+    Serial.print(id);
+    Serial.print("  Starting Time : ");
   }
   else if((regCount[finId]%2)==0){
     regHour=hours;
@@ -422,27 +423,30 @@ void getFingerprintCal() {
     regSec=seconds;
 
     int ts,tm,th;
-    if(arrPres[finId]<=regSec)
+    if(preSec[finId]<=regSec)
     {
-      ts=regSec-arrPres[finId];
+      ts=regSec-preSec[finId];
     }
     else
     {
-      ts=regSec+60-arrPres[finId];
+      ts=regSec+60-preSec[finId];
       regMin--;
     }
 
-    if(arrPrem[finId]<=regMin)
+    if(preMin[finId]<=regMin)
     {
-      tm=regMin-arrPrem[finId];
+      tm=regMin-preMin[finId];
     }
     else
     {
-      tm=regMin+60-arrPrem[finId];
+      tm=regMin+60-preMin[finId];
       regHour--;
     }
-     th = regHour-arrPreh[finId];
+     th = regHour-preHour[finId];
      time_sec =ts+(tm*60)+(th*60*60);
+     Serial.print("ID ");
+     Serial.print(id);
+     Serial.print("  Ending Time : ");
   }
   
   if(dayType==1)
@@ -455,23 +459,25 @@ void getFingerprintCal() {
   }
   
   lcd.print(hours); lcd.print(":"); lcd.print(minutes); lcd.print(":"); lcd.print(seconds);
-  Serial.print("ID:"); Serial.print(finger.fingerID);
-  Serial.print("  ");
-  Serial.print(hours);Serial.print(":");Serial.print(minutes);
-  Serial.print(":");Serial.println(seconds);
-  Serial.print("Total Salary : ");
-  Serial.println(salary[finId]);
+  Serial.print(hours);
+  Serial.print(":");
+  Serial.print(minutes);
+  Serial.print(":");
+  Serial.println(seconds);
  
 }
 
 void showSalary()
 {
+  Serial.println();
+  Serial.println("\tSalary Details ");
+  Serial.println();
   int i;
   for(i=1;i<=30;i++)
   {
     Serial.print("ID : ");
     Serial.print(i);
-    Serial.print("\t");
+    Serial.print("\t \t Salary : ");
     Serial.println(salary[i-1]);
   }
 
